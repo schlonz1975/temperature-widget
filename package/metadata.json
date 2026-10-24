@@ -6,7 +6,7 @@
         "Icon": "temperature-normal",
         "Authors": [{ "Name": "Jens" }],
         "Category": "System Information",
-        "License": "GPL-2.0+",
+        "License": "MIT",
         "Version": "1.0.0"
     },
     "X-Plasma-API-Minimum-Version": "6.0",

@@ -49,3 +49,7 @@ package/
   contents/ui/{main,SensorCard,Config*}.qml
 install.sh
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE). Use at your own risk, no warranty.
