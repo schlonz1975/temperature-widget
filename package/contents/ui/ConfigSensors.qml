@@ -73,7 +73,14 @@ KCM.SimpleKCM {
                     checked: page.isSelected(row.modelData.id)
                     onToggled: page.setSelected(row.modelData.id, checked)
                     text: row.modelData.label
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 13
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 11
+                }
+                QQC.Label {
+                    text: row.modelData.raw || ""
+                    font: Kirigami.Theme.smallFont
+                    opacity: 0.55
+                    elide: Text.ElideRight
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 8
                 }
                 QQC.Label {
                     text: Sensors.format(row.modelData.kind, row.modelData.value, false) + " " + Sensors.unit(row.modelData.kind, false)

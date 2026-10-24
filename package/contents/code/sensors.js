@@ -14,6 +14,33 @@ function command(includeNvidia) {
     return c;
 }
 
+var NAMES = {
+    "k10temp:Tctl": "CPU Temperature",
+    "k10temp:Tdie": "CPU Die",
+    "nvme:Composite": "NVMe SSD",
+    "nct:SYSTIN": "Motherboard",
+    "nct:CPUTIN": "CPU Socket",
+    "nct:TSI0_TEMP": "CPU (AMD TSI)",
+    "nct:SMBUSMASTER 0": "SMBus Master",
+    "nct:PCH_CHIP_TEMP": "Chipset",
+    "nct:PCH_CHIP_CPU_MAX_TEMP": "Chipset CPU Max",
+    "nct:PCH_CPU_TEMP": "Chipset CPU",
+    "nct:PCH_MCH_TEMP": "Chipset MCH",
+    "nct:PCH_DIM0_TEMP": "Chipset DIMM0"
+};
+
+// Human-readable sensor name from chip, channel (temp1/fan2) and driver label.
+function niceName(chip, base, label) {
+    var key = (/^(nct|it8|w83)/.test(chip) ? "nct" : chip) + ":" + label;
+    if (NAMES[key]) return NAMES[key];
+    var m;
+    if ((m = /^fan(\d+)$/.exec(base))) return "Fan " + m[1];
+    if ((m = /^Tccd(\d+)$/.exec(label))) return "CPU Core Die " + m[1];
+    if ((m = /^AUXTIN(\d+)$/.exec(label))) return "Aux Probe " + (parseInt(m[1]) + 1);
+    if (chip === "nvme" && (m = /^Sensor (\d+)$/.exec(label))) return "NVMe SSD Sensor " + m[1];
+    return friendly(chip) + " " + (label || base);
+}
+
 function friendly(chip) {
     if (chip === "k10temp" || chip === "coretemp") return "CPU";
     if (/^nvme/.test(chip)) return "NVMe";
@@ -23,8 +50,8 @@ function friendly(chip) {
 }
 
 var NV = {
-    temp:  { kind: "temp", label: "GPU Temp" },
-    fan:   { kind: "pct",  label: "GPU Fan" },
+    temp:  { kind: "temp", label: "GPU Temperature" },
+    fan:   { kind: "pct",  label: "GPU Fan Speed" },
     util:  { kind: "pct",  label: "GPU Load" },
     power: { kind: "watt", label: "GPU Power" }
 };
@@ -38,7 +65,7 @@ function kindOf(id) {
 function defaultLabel(id) {
     if (id.indexOf("n:") === 0) return (NV[id.slice(2)] || { label: id }).label;
     var p = id.split(":");
-    return friendly(p[1] || "?") + " " + (p[2] || "");
+    return niceName(p[1] || "?", p[2] || "", "");
 }
 
 // -> array of {id, kind, label, value}
@@ -54,7 +81,8 @@ function parse(out) {
             res.push({
                 id: "h:" + f[1] + ":" + f[2],
                 kind: isFan ? "fan" : "temp",
-                label: friendly(f[1]) + " " + (f[3] || f[2]),
+                label: niceName(f[1], f[2], f[3]),
+                raw: f[1] + " " + (f[3] || f[2]),
                 value: isFan ? raw : raw / 1000
             });
         } else if (f[0] === "N" && f.length >= 2) {
