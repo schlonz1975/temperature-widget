@@ -14,7 +14,8 @@ KCM.SimpleKCM {
     property string cfg_sensorLabels: "{}"
     property string cfg_sensorLabelsDefault: "{}"
 
-    property var discovered: []
+    // updated in place so rows (and half-typed names) survive rescans
+    ListModel { id: sensorModel }
     readonly property var aliasMap: {
         try { return JSON.parse(cfg_sensorLabels) } catch (e) { return {} }
     }
@@ -43,12 +44,25 @@ KCM.SimpleKCM {
         cfg_sensorLabels = JSON.stringify(m);
     }
 
+    function applyScan(list) {
+        var same = list.length === sensorModel.count;
+        for (var i = 0; same && i < list.length; ++i)
+            same = sensorModel.get(i).sid === list[i].id;
+        if (!same) {
+            sensorModel.clear();
+            for (var j = 0; j < list.length; ++j)
+                sensorModel.append({ sid: list[j].id, label: list[j].label, raw: list[j].raw || "", kind: list[j].kind, value: list[j].value });
+        } else {
+            for (var k = 0; k < list.length; ++k) sensorModel.setProperty(k, "value", list[k].value);
+        }
+    }
+
     P5Support.DataSource {
         id: exec
         engine: "executable"
         connectedSources: [Sensors.command(true)]
         interval: 3000
-        onNewData: (source, data) => page.discovered = Sensors.parse(data["stdout"] || "")
+        onNewData: (source, data) => page.applyScan(Sensors.parse(data["stdout"] || ""))
     }
 
     ColumnLayout {
@@ -59,50 +73,50 @@ KCM.SimpleKCM {
         }
         Kirigami.PlaceholderMessage {
             Layout.fillWidth: true
-            visible: page.discovered.length === 0
+            visible: sensorModel.count === 0
             text: i18n("Scanning sensors…")
         }
 
         Repeater {
-            model: page.discovered
+            model: sensorModel
             delegate: RowLayout {
                 id: row
-                required property var modelData
+                required property var model
                 Layout.fillWidth: true
                 QQC.CheckBox {
-                    checked: page.isSelected(row.modelData.id)
-                    onToggled: page.setSelected(row.modelData.id, checked)
-                    text: row.modelData.label
+                    checked: page.isSelected(row.model.sid)
+                    onToggled: page.setSelected(row.model.sid, checked)
+                    text: row.model.label
                     Layout.preferredWidth: Kirigami.Units.gridUnit * 11
                 }
                 QQC.Label {
-                    text: row.modelData.raw || ""
+                    text: row.model.raw || ""
                     font: Kirigami.Theme.smallFont
                     opacity: 0.55
                     elide: Text.ElideRight
                     Layout.preferredWidth: Kirigami.Units.gridUnit * 8
                 }
                 QQC.Label {
-                    text: Sensors.format(row.modelData.kind, row.modelData.value, false) + " " + Sensors.unit(row.modelData.kind, false)
+                    text: Sensors.format(row.model.kind, row.model.value, false) + " " + Sensors.unit(row.model.kind, false)
                     opacity: 0.7
                     Layout.preferredWidth: Kirigami.Units.gridUnit * 4
                 }
                 QQC.TextField {
                     Layout.fillWidth: true
-                    enabled: page.isSelected(row.modelData.id)
+                    enabled: page.isSelected(row.model.sid)
                     placeholderText: i18n("Custom name")
-                    text: page.aliasMap[row.modelData.id] || ""
-                    onEditingFinished: page.setAlias(row.modelData.id, text)
+                    text: page.aliasMap[row.model.sid] || ""
+                    onTextEdited: page.setAlias(row.model.sid, text)
                 }
                 QQC.ToolButton {
                     icon.name: "go-up"
-                    enabled: page.isSelected(row.modelData.id)
-                    onClicked: page.move(row.modelData.id, -1)
+                    enabled: page.isSelected(row.model.sid)
+                    onClicked: page.move(row.model.sid, -1)
                 }
                 QQC.ToolButton {
                     icon.name: "go-down"
-                    enabled: page.isSelected(row.modelData.id)
-                    onClicked: page.move(row.modelData.id, 1)
+                    enabled: page.isSelected(row.model.sid)
+                    onClicked: page.move(row.model.sid, 1)
                 }
             }
         }
