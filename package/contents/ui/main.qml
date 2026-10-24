@@ -24,7 +24,14 @@ PlasmoidItem {
 
     readonly property var pal: palette()
 
+    // Entries must be real color objects: consumers read .r/.g/.b
     function palette() {
+        var p = rawPalette();
+        for (var k in p) p[k] = Qt.color(p[k]);
+        return p;
+    }
+
+    function rawPalette() {
         var c = cfg;
         switch (c.colorTheme) {
         case 1: return { bg: "#2e3440", text: "#eceff4", cool: "#a3be8c", warm: "#ebcb8b", hot: "#bf616a", accent: "#88c0d0" };
