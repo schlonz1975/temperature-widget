@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "com.jens.hwmonitor",
+        "Name": "Hardware Temps & Fans",
+        "Description": "Temperatures and fan speeds from hwmon and nvidia-smi with gauges and sparklines",
+        "Icon": "temperature-normal",
+        "Authors": [{ "Name": "Jens" }],
+        "Category": "System Information",
+        "License": "GPL-2.0+",
+        "Version": "1.0.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "KPackageStructure": "Plasma/Applet"
+}
